@@ -5,6 +5,7 @@ const compression = require("compression");
 const morgan = require("morgan");
 const { rateLimit } = require("express-rate-limit");
 const path = require("path");
+const authRoutes = require("./routes/authRoutes");
 
 // Load environment variables
 require("dotenv").config({
@@ -67,7 +68,10 @@ const apiLimiter = rateLimit({
 
 app.use(API_PREFIX, apiLimiter);
 
-// 4. HEALTH CHECK ROUTE
+// 4. AUTHENTICATION ROUTES
+
+app.use(`${API_PREFIX}/auth`, authRoutes);
+// 5.HEALTH CHECK ROUTE
 
 app.get(`${API_PREFIX}/health`, async (req, res) => {
   try {
@@ -96,7 +100,7 @@ app.get(`${API_PREFIX}/health`, async (req, res) => {
   }
 });
 
-// 5. 404 HANDLER
+// 6. 404 HANDLER
 
 app.use((req, res) => {
   return res.status(404).json({
@@ -105,7 +109,7 @@ app.use((req, res) => {
   });
 });
 
-// 6. CENTRALIZED ERROR HANDLER
+// 7. CENTRALIZED ERROR HANDLER
 
 app.use((error, req, res, next) => {
   console.error("Application error:", error);
