@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const { rateLimit } = require("express-rate-limit");
 const path = require("path");
 const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 // Load environment variables
 require("dotenv").config({
@@ -71,6 +72,10 @@ app.use(API_PREFIX, apiLimiter);
 // 4. AUTHENTICATION ROUTES
 
 app.use(`${API_PREFIX}/auth`, authRoutes);
+
+// USER MANAGEMENT ROUTES
+
+app.use(`${API_PREFIX}/users`, userRoutes);
 // 5.HEALTH CHECK ROUTE
 
 app.get(`${API_PREFIX}/health`, async (req, res) => {
