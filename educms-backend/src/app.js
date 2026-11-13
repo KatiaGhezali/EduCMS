@@ -16,6 +16,7 @@ const userRoutes = require("./routes/userRoutes");
 const mediaRoutes = require("./routes/mediaRoutes");
 const postRevisionRoutes = require("./routes/postRevisionRoutes");
 const postRoutes = require("./routes/postRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
 
 // Database connection
 const { query } = require("./config/database");
@@ -95,6 +96,10 @@ app.use(`${API_PREFIX}/users`, userRoutes);
 
 app.use(`${API_PREFIX}/posts`, postRevisionRoutes);
 app.use(`${API_PREFIX}/posts`, postRoutes);
+
+// CATEGORY MANAGEMENT ROUTES
+app.use(`${API_PREFIX}/categories`, categoryRoutes);
+
 // 5.HEALTH CHECK ROUTE
 
 app.get(`${API_PREFIX}/health`, async (req, res) => {
