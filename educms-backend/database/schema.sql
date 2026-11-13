@@ -140,6 +140,49 @@ CREATE TABLE IF NOT EXISTS posts (
     CONSTRAINT published_posts_require_date
         CHECK (status <> 'published' OR published_at IS NOT NULL)
 );
+-- ==========================================
+-- 4.1 POST REVISIONS
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS post_revisions (
+    revision_id BIGSERIAL PRIMARY KEY,
+
+    post_id BIGINT NOT NULL REFERENCES posts(id)
+        ON DELETE CASCADE,
+
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(280) NOT NULL,
+
+    content TEXT NOT NULL,
+    excerpt TEXT,
+
+    category_id BIGINT REFERENCES categories(id)
+        ON DELETE SET NULL,
+
+    status VARCHAR(20) NOT NULL
+        CHECK (status IN ('draft', 'published', 'archived')),
+
+    published_at TIMESTAMP WITH TIME ZONE,
+
+    revision_number INTEGER NOT NULL
+        CHECK (revision_number > 0),
+
+    created_by BIGINT REFERENCES users(id)
+        ON DELETE SET NULL,
+
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT unique_post_revision
+        UNIQUE (post_id, revision_number)
+);
+
+-- Find revisions belonging to a post
+CREATE INDEX IF NOT EXISTS post_revisions_post_id_idx
+ON post_revisions(post_id);
+
+-- Retrieve revisions by creation date
+CREATE INDEX IF NOT EXISTS post_revisions_created_at_idx
+ON post_revisions(created_at DESC);
 
 -- ==========================================
 -- 5. TAGS

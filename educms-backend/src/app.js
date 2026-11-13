@@ -8,6 +8,7 @@ const path = require("path");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const mediaRoutes = require("./routes/mediaRoutes");
+const postRevisionRoutes = require("./routes/postRevisionRoutes");
 
 // Load environment variables
 require("dotenv").config({
@@ -88,6 +89,9 @@ app.use(`${API_PREFIX}/auth`, authRoutes);
 // USER MANAGEMENT ROUTES
 
 app.use(`${API_PREFIX}/users`, userRoutes);
+// POST REVISION ROUTES
+
+app.use(`${API_PREFIX}/posts`, postRevisionRoutes);
 // 5.HEALTH CHECK ROUTE
 
 app.get(`${API_PREFIX}/health`, async (req, res) => {

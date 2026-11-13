@@ -1,4 +1,5 @@
-const { query } = require("../config/database");
+const { query, transaction } = require("../config/database");
+const PostRevision = require("./PostRevision");
 
 // Shared SQL for retrieving a post with its related information
 const postSelect = `
@@ -179,8 +180,8 @@ const findBySlug = async (slug) => {
   return result.rows[0] || null;
 };
 
-// Update an existing post
-const update = async (id, postData = {}) => {
+// Update an existing post and save its previous version
+const update = async (id, postData = {}, updatedBy = null) => {
   const allowedFields = {
     title: "title",
     slug: "slug",
@@ -197,8 +198,8 @@ const update = async (id, postData = {}) => {
     publishedAt: "published_at",
   };
 
-  const values = [];
   const updates = [];
+  const values = [];
 
   for (const [key, column] of Object.entries(allowedFields)) {
     if (Object.prototype.hasOwnProperty.call(postData, key)) {
@@ -207,6 +208,7 @@ const update = async (id, postData = {}) => {
     }
   }
 
+  // Nothing to update: return the existing post without creating a revision
   if (updates.length === 0) {
     return findById(id);
   }
@@ -219,24 +221,60 @@ const update = async (id, postData = {}) => {
     updates.push("published_at = COALESCE(published_at, CURRENT_TIMESTAMP)");
   }
 
-  values.push(id);
+  return transaction(async (client) => {
+    // Lock the post so simultaneous updates cannot create conflicting revisions
+    const currentResult = await client.query(
+      `SELECT * FROM posts WHERE id = $1 FOR UPDATE`,
+      [id],
+    );
 
-  const sql = `
-        UPDATE posts
-        SET ${updates.join(", ")}
-        WHERE id = $${values.length}
-        RETURNING id
+    if (currentResult.rows.length === 0) {
+      return null;
+    }
+
+    const currentPost = currentResult.rows[0];
+
+    // Calculate the next revision number
+    const revisionNumber = await PostRevision.getNextRevisionNumber(client, id);
+
+    // Save the current post before applying the changes
+    await PostRevision.create(client, {
+      postId: currentPost.id,
+      title: currentPost.title,
+      slug: currentPost.slug,
+      content: currentPost.content,
+      excerpt: currentPost.excerpt,
+      categoryId: currentPost.category_id,
+      status: currentPost.status,
+      publishedAt: currentPost.published_at,
+      revisionNumber,
+      createdBy: updatedBy ?? currentPost.author_id,
+    });
+
+    // Apply the requested changes
+    values.push(id);
+
+    const updateSql = `
+      UPDATE posts
+      SET ${updates.join(", ")}
+      WHERE id = $${values.length}
+      RETURNING id
     `;
 
-  const result = await query(sql, values);
+    await client.query(updateSql, values);
 
-  if (result.rows.length === 0) {
-    return null;
-  }
+    // Retrieve the updated post with its related information
+    const updatedResult = await client.query(
+      `
+        ${postSelect}
+        WHERE p.id = $1
+      `,
+      [id],
+    );
 
-  return findById(id);
+    return updatedResult.rows[0] || null;
+  });
 };
-
 // Delete a post
 const remove = async (id) => {
   const result = await query(
