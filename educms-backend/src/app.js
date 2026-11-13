@@ -7,6 +7,7 @@ const { rateLimit } = require("express-rate-limit");
 const path = require("path");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const mediaRoutes = require("./routes/mediaRoutes");
 
 // Load environment variables
 require("dotenv").config({
@@ -51,8 +52,19 @@ app.use(
   }),
 );
 
+// MEDIA MANAGEMENT ROUTES
+app.use(`${API_PREFIX}/media`, mediaRoutes);
 // HTTP request logging
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+
+// Serve uploaded media files
+const uploadDirectory = path.resolve(
+  __dirname,
+  "../",
+  process.env.UPLOAD_DIR || "uploads",
+);
+
+app.use("/uploads", express.static(uploadDirectory));
 
 // 3. RATE LIMITING
 
