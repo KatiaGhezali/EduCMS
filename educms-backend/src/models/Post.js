@@ -32,6 +32,7 @@ const buildFilters = ({
   status,
   categoryId,
   authorId,
+  authorIdOrPublished,
   search,
   isFeatured,
   tagId,
@@ -54,15 +55,23 @@ const buildFilters = ({
     conditions.push(`p.author_id = $${values.length}`);
   }
 
+  // Authors can see their own posts and all published posts
+  if (authorIdOrPublished) {
+    values.push(authorIdOrPublished);
+    conditions.push(
+      `(p.author_id = $${values.length} OR p.status = 'published')`,
+    );
+  }
+
   if (search) {
     values.push(`%${search}%`);
     conditions.push(`
-            (
-                p.title ILIKE $${values.length}
-                OR p.content ILIKE $${values.length}
-                OR p.excerpt ILIKE $${values.length}
-            )
-        `);
+      (
+        p.title ILIKE $${values.length}
+        OR p.content ILIKE $${values.length}
+        OR p.excerpt ILIKE $${values.length}
+      )
+    `);
   }
 
   if (typeof isFeatured === "boolean") {
@@ -73,13 +82,13 @@ const buildFilters = ({
   if (tagId) {
     values.push(tagId);
     conditions.push(`
-            EXISTS (
-                SELECT 1
-                FROM post_tags pt
-                WHERE pt.post_id = p.id
-                AND pt.tag_id = $${values.length}
-            )
-        `);
+      EXISTS (
+        SELECT 1
+        FROM post_tags pt
+        WHERE pt.post_id = p.id
+        AND pt.tag_id = $${values.length}
+      )
+    `);
   }
 
   return {
@@ -294,6 +303,7 @@ const findAll = async ({
   status,
   categoryId,
   authorId,
+  authorIdOrPublished,
   search,
   isFeatured,
   tagId,
@@ -304,6 +314,7 @@ const findAll = async ({
     status,
     categoryId,
     authorId,
+    authorIdOrPublished,
     search,
     isFeatured,
     tagId,

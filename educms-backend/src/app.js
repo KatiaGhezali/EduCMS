@@ -1,19 +1,21 @@
+const path = require("path");
+// Load environment variables
+require("dotenv").config({
+  path: path.resolve(__dirname, "../.env"),
+});
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
 const { rateLimit } = require("express-rate-limit");
-const path = require("path");
+
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const mediaRoutes = require("./routes/mediaRoutes");
 const postRevisionRoutes = require("./routes/postRevisionRoutes");
-
-// Load environment variables
-require("dotenv").config({
-  path: path.resolve(__dirname, "../.env"),
-});
+const postRoutes = require("./routes/postRoutes");
 
 // Database connection
 const { query } = require("./config/database");
@@ -89,9 +91,10 @@ app.use(`${API_PREFIX}/auth`, authRoutes);
 // USER MANAGEMENT ROUTES
 
 app.use(`${API_PREFIX}/users`, userRoutes);
-// POST REVISION ROUTES
+// POST MANAGEMENT ROUTES
 
 app.use(`${API_PREFIX}/posts`, postRevisionRoutes);
+app.use(`${API_PREFIX}/posts`, postRoutes);
 // 5.HEALTH CHECK ROUTE
 
 app.get(`${API_PREFIX}/health`, async (req, res) => {
