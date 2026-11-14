@@ -105,9 +105,6 @@ app.use(`${API_PREFIX}/posts`, postRoutes);
 app.use(`${API_PREFIX}/categories`, categoryRoutes);
 app.use(`${API_PREFIX}/tags`, tagRoutes);
 
-// COMMENT MANAGEMENT ROUTES
-app.use(API_PREFIX, commentRoutes);
-
 // 5.HEALTH CHECK ROUTE
 
 app.get(`${API_PREFIX}/health`, async (req, res) => {
@@ -136,6 +133,9 @@ app.get(`${API_PREFIX}/health`, async (req, res) => {
     });
   }
 });
+
+// COMMENT MANAGEMENT ROUTES
+app.use(API_PREFIX, commentRoutes);
 
 // API DOCUMENTATION
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
