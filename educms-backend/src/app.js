@@ -10,6 +10,8 @@ const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
 const { rateLimit } = require("express-rate-limit");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./config/swagger");
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -135,6 +137,9 @@ app.get(`${API_PREFIX}/health`, async (req, res) => {
   }
 });
 
+// API DOCUMENTATION
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // 6. 404 HANDLER
 
 app.use((req, res) => {
@@ -146,7 +151,7 @@ app.use((req, res) => {
 
 // 7. CENTRALIZED ERROR HANDLER
 
-app.use((error, req, res, next) => {
+app.use((error, req, res, _next) => {
   console.error("Application error:", error);
 
   const statusCode = error.statusCode || error.status || 500;

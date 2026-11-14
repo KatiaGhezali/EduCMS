@@ -105,7 +105,8 @@ const login = async ({ email, password }) => {
   const tokens = await issueTokens(user);
 
   // Never return the password hash
-  const { password_hash, ...safeUser } = user;
+  const safeUser = { ...user };
+  delete safeUser.password_hash;
 
   return {
     user: safeUser,
@@ -119,7 +120,7 @@ const refresh = async (refreshToken) => {
 
   try {
     decoded = jwtUtils.verifyRefreshToken(refreshToken);
-  } catch (error) {
+  } catch {
     throw createError("Invalid or expired refresh token.", 401);
   }
 
@@ -139,7 +140,7 @@ const refresh = async (refreshToken) => {
   const newTokenHash = hashToken(newRefreshToken);
 
   // Rotate the refresh token atomically
-  const result = await transaction(async (client) => {
+  await transaction(async (client) => {
     const existingToken = await client.query(
       `
         SELECT id
@@ -193,7 +194,7 @@ const logout = async (refreshToken) => {
 
   try {
     decoded = jwtUtils.verifyRefreshToken(refreshToken);
-  } catch (error) {
+  } catch {
     throw createError("Invalid or expired refresh token.", 401);
   }
 

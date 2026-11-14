@@ -28,7 +28,7 @@ const authenticate = async (req, res, next) => {
   // Verify the access token
   try {
     decoded = jwtUtils.verifyAccessToken(token);
-  } catch (error) {
+  } catch {
     return res.status(401).json({
       success: false,
       message: "Invalid or expired access token.",
