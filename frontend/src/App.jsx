@@ -1,10 +1,19 @@
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { Box, Button, Container, Typography, Paper } from "@mui/material";
+import { Box, Chip, Paper, Typography } from "@mui/material";
 
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
+import DashboardLayout from "./components/layout/DashboardLayout";
+import DashboardOverview from "./pages/dashboard/DashboardOverview";
 import { useAuth } from "./context/AuthContext";
+
+const roleDescriptions = {
+  admin: "Manage your content, users, and the entire platform.",
+  editor: "Manage and review content across the platform.",
+  author: "Create, manage, and publish your own content.",
+  subscriber: "Explore and read published content.",
+};
 
 function Dashboard() {
   const { user, logout } = useAuth();
@@ -13,66 +22,84 @@ function Dashboard() {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate("/login");
-    } catch {
-      navigate("/login");
+    } finally {
+      navigate("/login", { replace: true });
     }
   };
 
+  const fullName =
+    `${user?.first_name || ""} ${user?.last_name || ""}`.trim() ||
+    user?.username ||
+    "User";
+
+  const role = user?.role || "subscriber";
+
   return (
-    <Container maxWidth="lg">
-      <Box
+    <DashboardLayout user={user} onLogout={handleLogout}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Overview
+        </Typography>
+
+        <Typography color="text.secondary">
+          Welcome to your EduCMS workspace.
+        </Typography>
+      </Box>
+
+      <Paper
+        elevation={0}
         sx={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          p: { xs: 3, md: 4 },
+          mb: 3,
+          border: "1px solid #EAECF0",
+          borderRadius: 3,
         }}
       >
-        <Paper sx={{ p: 5, textAlign: "center", width: "100%" }}>
-          <Typography variant="h4" color="primary" gutterBottom>
-            Welcome to EduCMS!
-          </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: { xs: "flex-start", sm: "center" },
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography variant="h5" fontWeight={700} gutterBottom>
+              Hello, {fullName}!
+            </Typography>
 
-          <Typography variant="h6" gutterBottom>
-            {user?.first_name} {user?.last_name}
-          </Typography>
+            <Typography color="text.secondary">
+              {roleDescriptions[role] || roleDescriptions.subscriber}
+            </Typography>
+          </Box>
 
-          <Typography color="text.secondary" sx={{ mb: 1 }}>
-            {user?.email}
-          </Typography>
+          <Chip
+            label={role}
+            color="primary"
+            sx={{
+              textTransform: "capitalize",
+              fontWeight: 600,
+            }}
+          />
+        </Box>
+      </Paper>
 
-          <Typography color="text.secondary" sx={{ mb: 3 }}>
-            Role: {user?.role}
-          </Typography>
-
-          <Typography sx={{ mb: 3 }}>
-            Your authentication is working. The dashboard will be developed
-            next.
-          </Typography>
-
-          <Button variant="contained" onClick={handleLogout}>
-            Log out
-          </Button>
-        </Paper>
-      </Box>
-    </Container>
+      <DashboardOverview user={user} />
+    </DashboardLayout>
   );
 }
 
 function App() {
   return (
     <Routes>
-      {/* Public routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
       </Route>
 
-      {/* Default and unknown routes */}
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
