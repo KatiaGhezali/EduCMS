@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
 import PostsPage from "./pages/dashboard/PostsPage.jsx";
+import CategoriesPage from "./pages/dashboard/CategoriesPage.jsx";
 
 import { useAuth } from "./context/AuthContext";
 
@@ -108,6 +109,7 @@ function App() {
         <Route element={<DashboardShell />}>
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/dashboard/posts" element={<PostsPage />} />
+          <Route path="/dashboard/categories" element={<CategoriesPage />} />
         </Route>
       </Route>
 

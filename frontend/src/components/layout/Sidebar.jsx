@@ -28,7 +28,6 @@ const navigationByRole = {
       label: "Categories",
       icon: CategoryOutlinedIcon,
       path: "/dashboard/categories",
-      disabled: true,
     },
     {
       label: "Tags",
@@ -63,7 +62,6 @@ const navigationByRole = {
       label: "Categories",
       icon: CategoryOutlinedIcon,
       path: "/dashboard/categories",
-      disabled: true,
     },
     {
       label: "Tags",
