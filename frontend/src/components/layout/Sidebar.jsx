@@ -38,7 +38,6 @@ const navigationByRole = {
       label: "Comments",
       icon: CommentOutlinedIcon,
       path: "/dashboard/comments",
-      disabled: true,
     },
     {
       label: "Media",
@@ -71,7 +70,6 @@ const navigationByRole = {
       label: "Comments",
       icon: CommentOutlinedIcon,
       path: "/dashboard/comments",
-      disabled: true,
     },
     {
       label: "Media",
