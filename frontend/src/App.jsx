@@ -8,6 +8,7 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
 import PostsPage from "./pages/dashboard/PostsPage.jsx";
 import CategoriesPage from "./pages/dashboard/CategoriesPage.jsx";
+import TagsPage from "./pages/dashboard/TagsPage.jsx";
 
 import { useAuth } from "./context/AuthContext";
 
@@ -110,6 +111,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/dashboard/posts" element={<PostsPage />} />
           <Route path="/dashboard/categories" element={<CategoriesPage />} />
+          <Route path="/dashboard/tags" element={<TagsPage />} />
         </Route>
       </Route>
 

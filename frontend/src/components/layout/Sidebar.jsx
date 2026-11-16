@@ -33,7 +33,6 @@ const navigationByRole = {
       label: "Tags",
       icon: LocalOfferOutlinedIcon,
       path: "/dashboard/tags",
-      disabled: true,
     },
     {
       label: "Comments",
@@ -67,7 +66,6 @@ const navigationByRole = {
       label: "Tags",
       icon: LocalOfferOutlinedIcon,
       path: "/dashboard/tags",
-      disabled: true,
     },
     {
       label: "Comments",
