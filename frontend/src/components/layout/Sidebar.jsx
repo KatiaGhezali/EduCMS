@@ -43,7 +43,6 @@ const navigationByRole = {
       label: "Media",
       icon: PermMediaOutlinedIcon,
       path: "/dashboard/media",
-      disabled: true,
     },
     {
       label: "Users",
@@ -75,7 +74,6 @@ const navigationByRole = {
       label: "Media",
       icon: PermMediaOutlinedIcon,
       path: "/dashboard/media",
-      disabled: true,
     },
   ],
 
@@ -96,7 +94,6 @@ const navigationByRole = {
       label: "Media",
       icon: PermMediaOutlinedIcon,
       path: "/dashboard/media",
-      disabled: true,
     },
   ],
 
