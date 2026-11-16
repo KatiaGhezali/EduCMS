@@ -6,6 +6,8 @@ import Register from "./pages/auth/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
+import PostsPage from "./pages/dashboard/PostsPage.jsx";
+
 import { useAuth } from "./context/AuthContext";
 
 const roleDescriptions = {
@@ -15,7 +17,7 @@ const roleDescriptions = {
   subscriber: "Explore and read published content.",
 };
 
-function Dashboard() {
+function DashboardShell() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -27,6 +29,12 @@ function Dashboard() {
     }
   };
 
+  return <DashboardLayout user={user} onLogout={handleLogout} />;
+}
+
+function DashboardHome() {
+  const { user } = useAuth();
+
   const fullName =
     `${user?.first_name || ""} ${user?.last_name || ""}`.trim() ||
     user?.username ||
@@ -35,7 +43,7 @@ function Dashboard() {
   const role = user?.role || "subscriber";
 
   return (
-    <DashboardLayout user={user} onLogout={handleLogout}>
+    <>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight={700} gutterBottom>
           Overview
@@ -86,7 +94,7 @@ function Dashboard() {
       </Paper>
 
       <DashboardOverview user={user} />
-    </DashboardLayout>
+    </>
   );
 }
 
@@ -97,7 +105,10 @@ function App() {
       <Route path="/register" element={<Register />} />
 
       <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route element={<DashboardShell />}>
+          <Route path="/dashboard" element={<DashboardHome />} />
+          <Route path="/dashboard/posts" element={<PostsPage />} />
+        </Route>
       </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />

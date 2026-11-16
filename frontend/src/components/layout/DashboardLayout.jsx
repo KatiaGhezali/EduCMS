@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
@@ -23,7 +23,9 @@ function DashboardLayout({ user, onLogout, children }) {
       >
         <Topbar user={user} onLogout={onLogout} />
 
-        <Box sx={{ flexGrow: 1, p: { xs: 2, md: 4 } }}>{children}</Box>
+        <Box sx={{ flexGrow: 1, p: { xs: 2, md: 4 } }}>
+          {children ?? <Outlet />}
+        </Box>
       </Box>
     </Box>
   );

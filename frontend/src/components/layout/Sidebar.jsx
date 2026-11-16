@@ -8,6 +8,8 @@ import {
   Typography,
 } from "@mui/material";
 
+import { NavLink } from "react-router-dom";
+
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
@@ -26,16 +28,34 @@ const navigationByRole = {
       label: "Categories",
       icon: CategoryOutlinedIcon,
       path: "/dashboard/categories",
+      disabled: true,
     },
-    { label: "Tags", icon: LocalOfferOutlinedIcon, path: "/dashboard/tags" },
+    {
+      label: "Tags",
+      icon: LocalOfferOutlinedIcon,
+      path: "/dashboard/tags",
+      disabled: true,
+    },
     {
       label: "Comments",
       icon: CommentOutlinedIcon,
       path: "/dashboard/comments",
+      disabled: true,
     },
-    { label: "Media", icon: PermMediaOutlinedIcon, path: "/dashboard/media" },
-    { label: "Users", icon: PeopleOutlinedIcon, path: "/dashboard/users" },
+    {
+      label: "Media",
+      icon: PermMediaOutlinedIcon,
+      path: "/dashboard/media",
+      disabled: true,
+    },
+    {
+      label: "Users",
+      icon: PeopleOutlinedIcon,
+      path: "/dashboard/users",
+      disabled: true,
+    },
   ],
+
   editor: [
     { label: "Overview", icon: DashboardOutlinedIcon, path: "/dashboard" },
     { label: "Posts", icon: ArticleOutlinedIcon, path: "/dashboard/posts" },
@@ -43,27 +63,56 @@ const navigationByRole = {
       label: "Categories",
       icon: CategoryOutlinedIcon,
       path: "/dashboard/categories",
+      disabled: true,
     },
-    { label: "Tags", icon: LocalOfferOutlinedIcon, path: "/dashboard/tags" },
+    {
+      label: "Tags",
+      icon: LocalOfferOutlinedIcon,
+      path: "/dashboard/tags",
+      disabled: true,
+    },
     {
       label: "Comments",
       icon: CommentOutlinedIcon,
       path: "/dashboard/comments",
+      disabled: true,
     },
-    { label: "Media", icon: PermMediaOutlinedIcon, path: "/dashboard/media" },
+    {
+      label: "Media",
+      icon: PermMediaOutlinedIcon,
+      path: "/dashboard/media",
+      disabled: true,
+    },
   ],
+
   author: [
     { label: "Overview", icon: DashboardOutlinedIcon, path: "/dashboard" },
-    { label: "My Posts", icon: ArticleOutlinedIcon, path: "/dashboard/posts" },
+    {
+      label: "My Posts",
+      icon: ArticleOutlinedIcon,
+      path: "/dashboard/posts",
+    },
     {
       label: "Comments",
       icon: CommentOutlinedIcon,
       path: "/dashboard/comments",
+      disabled: true,
     },
-    { label: "Media", icon: PermMediaOutlinedIcon, path: "/dashboard/media" },
+    {
+      label: "Media",
+      icon: PermMediaOutlinedIcon,
+      path: "/dashboard/media",
+      disabled: true,
+    },
   ],
+
   subscriber: [
     { label: "Overview", icon: DashboardOutlinedIcon, path: "/dashboard" },
+    {
+      label: "Browse Posts",
+      icon: ArticleOutlinedIcon,
+      path: "/dashboard/posts",
+    },
   ],
 };
 
@@ -86,7 +135,13 @@ function Sidebar({ role, currentPath }) {
       }}
     >
       <Box
-        sx={{ display: "flex", alignItems: "center", gap: 1.5, py: 3, px: 1 }}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          py: 3,
+          px: 1,
+        }}
       >
         <Box
           sx={{
@@ -122,12 +177,18 @@ function Sidebar({ role, currentPath }) {
       <List sx={{ p: 0 }}>
         {navigation.map((item) => {
           const Icon = item.icon;
-          const isActive = currentPath === item.path;
+
+          const isActive =
+            currentPath === item.path ||
+            (item.path !== "/dashboard" &&
+              currentPath.startsWith(`${item.path}/`));
 
           return (
             <ListItemButton
               key={item.path}
-              disabled={item.path !== "/dashboard"}
+              component={item.disabled ? "div" : NavLink}
+              to={item.disabled ? undefined : item.path}
+              disabled={item.disabled}
               selected={isActive}
               sx={{
                 borderRadius: 2,
@@ -139,6 +200,9 @@ function Sidebar({ role, currentPath }) {
                   "& .MuiListItemIcon-root": {
                     color: "primary.main",
                   },
+                },
+                "&.Mui-selected:hover": {
+                  backgroundColor: "primary.light",
                 },
               }}
             >
