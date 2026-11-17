@@ -33,6 +33,9 @@ import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import RestoreOutlinedIcon from "@mui/icons-material/RestoreOutlined";
 
 import api from "../../services/api";
 import {
@@ -40,6 +43,9 @@ import {
   createPost,
   updatePost,
   deletePost,
+  getPostRevisions,
+  getPostRevision,
+  restorePostRevision,
 } from "../../services/postService";
 import { useAuth } from "../../context/AuthContext";
 
@@ -90,6 +96,7 @@ function PostsPage() {
   const canDelete = ["admin", "editor", "author"].includes(user?.role);
   const canCreate = ["admin", "editor", "author"].includes(user?.role);
   const canFeaturePosts = ["admin", "editor"].includes(user?.role);
+  const canViewRevisions = ["admin", "editor"].includes(user?.role);
 
   const canEditPost = (post) =>
     ["admin", "editor"].includes(user?.role) ||
@@ -135,6 +142,21 @@ function PostsPage() {
 
   const [postToDelete, setPostToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Post revision history
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [historyPost, setHistoryPost] = useState(null);
+  const [revisions, setRevisions] = useState([]);
+  const [loadingRevisions, setLoadingRevisions] = useState(false);
+
+  // Selected revision preview
+  const [selectedRevision, setSelectedRevision] = useState(null);
+  const [revisionDialogOpen, setRevisionDialogOpen] = useState(false);
+  const [loadingRevision, setLoadingRevision] = useState(false);
+
+  // Revision restoration
+  const [revisionToRestore, setRevisionToRestore] = useState(null);
+  const [restoringRevision, setRestoringRevision] = useState(false);
 
   const [notification, setNotification] = useState({
     open: false,
@@ -326,6 +348,92 @@ function PostsPage() {
       });
     } finally {
       setDeleting(false);
+    }
+  };
+
+  // Open the revision history of a post
+  const handleOpenHistory = async (post) => {
+    setHistoryPost(post);
+    setHistoryDialogOpen(true);
+    setRevisions([]);
+    setSelectedRevision(null);
+
+    setLoadingRevisions(true);
+
+    try {
+      const result = await getPostRevisions(post.id);
+      setRevisions(result);
+    } catch (err) {
+      setNotification({
+        open: true,
+        message:
+          err.response?.data?.message ||
+          "Unable to load post revision history.",
+        severity: "error",
+      });
+    } finally {
+      setLoadingRevisions(false);
+    }
+  };
+
+  // View the details of a selected revision
+  const handleViewRevision = async (revision) => {
+    setLoadingRevision(true);
+    setRevisionDialogOpen(true);
+    setSelectedRevision(null);
+
+    try {
+      const result = await getPostRevision(
+        historyPost.id,
+        revision.revision_id,
+      );
+
+      setSelectedRevision(result);
+    } catch (err) {
+      setRevisionDialogOpen(false);
+
+      setNotification({
+        open: true,
+        message: err.response?.data?.message || "Unable to load this revision.",
+        severity: "error",
+      });
+    } finally {
+      setLoadingRevision(false);
+    }
+  };
+
+  // Restore a selected revision
+  const handleRestoreRevision = async () => {
+    if (!historyPost || !revisionToRestore) return;
+
+    setRestoringRevision(true);
+
+    try {
+      await restorePostRevision(historyPost.id, revisionToRestore.revision_id);
+
+      setRevisionToRestore(null);
+      setRevisionDialogOpen(false);
+      setHistoryDialogOpen(false);
+      setHistoryPost(null);
+      setSelectedRevision(null);
+
+      // Refresh the posts table
+      setRefreshPosts((current) => current + 1);
+
+      setNotification({
+        open: true,
+        message: "Post revision restored successfully.",
+        severity: "success",
+      });
+    } catch (err) {
+      setNotification({
+        open: true,
+        message:
+          err.response?.data?.message || "Unable to restore this revision.",
+        severity: "error",
+      });
+    } finally {
+      setRestoringRevision(false);
     }
   };
 
@@ -565,8 +673,20 @@ function PostsPage() {
                   </TableCell>
 
                   <TableCell>{formatDate(post.created_at)}</TableCell>
+
                   {canDelete && (
                     <TableCell align="right">
+                      {canViewRevisions && (
+                        <Button
+                          color="secondary"
+                          size="small"
+                          startIcon={<HistoryOutlinedIcon />}
+                          onClick={() => handleOpenHistory(post)}
+                          sx={{ mr: 1 }}
+                        >
+                          History
+                        </Button>
+                      )}
                       {canEditPost(post) && (
                         <Button
                           color="primary"
@@ -781,6 +901,310 @@ function PostsPage() {
         </Box>
       </Dialog>
 
+      {/* Post Revision History Dialog */}
+      <Dialog
+        open={historyDialogOpen}
+        onClose={() => {
+          if (!restoringRevision) {
+            setHistoryDialogOpen(false);
+            setHistoryPost(null);
+            setRevisions([]);
+          }
+        }}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>
+          Post History
+          {historyPost && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {historyPost.title}
+            </Typography>
+          )}
+        </DialogTitle>
+
+        <DialogContent dividers>
+          {loadingRevisions ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
+              <CircularProgress />
+            </Box>
+          ) : revisions.length === 0 ? (
+            <Alert severity="info">
+              No previous versions are available for this post yet. A revision
+              is created automatically when an existing post is updated.
+            </Alert>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 600 }}>Version</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Title</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>Saved</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>
+                      Actions
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {revisions.map((revision) => (
+                    <TableRow key={revision.revision_id} hover>
+                      <TableCell>v{revision.revision_number}</TableCell>
+
+                      <TableCell>
+                        <Typography fontWeight={500}>
+                          {revision.title}
+                        </Typography>
+                      </TableCell>
+
+                      <TableCell>
+                        <Chip
+                          label={revision.status}
+                          color={getStatusColor(revision.status)}
+                          size="small"
+                          sx={{ textTransform: "capitalize" }}
+                        />
+                      </TableCell>
+
+                      <TableCell>{formatDate(revision.created_at)}</TableCell>
+
+                      <TableCell align="right">
+                        <Button
+                          size="small"
+                          startIcon={<VisibilityOutlinedIcon />}
+                          onClick={() => handleViewRevision(revision)}
+                          sx={{ mr: 1 }}
+                        >
+                          View
+                        </Button>
+
+                        <Button
+                          size="small"
+                          color="warning"
+                          startIcon={<RestoreOutlinedIcon />}
+                          onClick={() => setRevisionToRestore(revision)}
+                        >
+                          Restore
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button
+            onClick={() => {
+              setHistoryDialogOpen(false);
+              setHistoryPost(null);
+              setRevisions([]);
+            }}
+            disabled={restoringRevision}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Revision Preview Dialog */}
+      <Dialog
+        open={revisionDialogOpen}
+        onClose={() => {
+          if (!restoringRevision) {
+            setRevisionDialogOpen(false);
+            setSelectedRevision(null);
+          }
+        }}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>
+          Revision Preview
+          {selectedRevision && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Version {selectedRevision.revision_number}
+            </Typography>
+          )}
+        </DialogTitle>
+
+        <DialogContent dividers>
+          {loadingRevision ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
+              <CircularProgress />
+            </Box>
+          ) : selectedRevision ? (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <Box>
+                <Typography variant="overline" color="text.secondary">
+                  Title
+                </Typography>
+
+                <Typography variant="h5" fontWeight={700}>
+                  {selectedRevision.title}
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                <Chip
+                  label={selectedRevision.status}
+                  color={getStatusColor(selectedRevision.status)}
+                  sx={{ textTransform: "capitalize" }}
+                />
+
+                <Chip
+                  label={`Version ${selectedRevision.revision_number}`}
+                  variant="outlined"
+                />
+
+                <Chip
+                  label={`Saved ${formatDate(selectedRevision.created_at)}`}
+                  variant="outlined"
+                />
+              </Box>
+
+              {selectedRevision.excerpt && (
+                <Box>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    gutterBottom
+                  >
+                    Excerpt
+                  </Typography>
+
+                  <Typography>{selectedRevision.excerpt}</Typography>
+                </Box>
+              )}
+
+              <Box>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  gutterBottom
+                >
+                  Content
+                </Typography>
+
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    border: "1px solid #EAECF0",
+                    borderRadius: 2,
+                    backgroundColor: "#F9FAFB",
+                    maxHeight: 400,
+                    overflowY: "auto",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      whiteSpace: "pre-wrap",
+                      overflowWrap: "anywhere",
+                    }}
+                  >
+                    {selectedRevision.content}
+                  </Typography>
+                </Paper>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  gutterBottom
+                >
+                  Slug
+                </Typography>
+
+                <Typography variant="body2">{selectedRevision.slug}</Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  gutterBottom
+                >
+                  Published Date
+                </Typography>
+
+                <Typography variant="body2">
+                  {formatDate(selectedRevision.published_at)}
+                </Typography>
+              </Box>
+            </Box>
+          ) : (
+            <Alert severity="error">Unable to display this revision.</Alert>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button
+            onClick={() => {
+              setRevisionDialogOpen(false);
+              setSelectedRevision(null);
+            }}
+            disabled={restoringRevision}
+          >
+            Close
+          </Button>
+
+          {selectedRevision && (
+            <Button
+              color="warning"
+              variant="contained"
+              startIcon={<RestoreOutlinedIcon />}
+              onClick={() => setRevisionToRestore(selectedRevision)}
+              disabled={restoringRevision}
+            >
+              Restore This Version
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Restore Revision Confirmation Dialog */}
+      <Dialog
+        open={Boolean(revisionToRestore)}
+        onClose={() => {
+          if (!restoringRevision) {
+            setRevisionToRestore(null);
+          }
+        }}
+      >
+        <DialogTitle>Restore this version?</DialogTitle>
+
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to restore version{" "}
+            {revisionToRestore?.revision_number} of "{historyPost?.title}"? The
+            current version will be saved in history before restoration.
+          </DialogContentText>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            onClick={() => setRevisionToRestore(null)}
+            disabled={restoringRevision}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            color="warning"
+            variant="contained"
+            onClick={handleRestoreRevision}
+            disabled={restoringRevision}
+          >
+            {restoringRevision ? "Restoring..." : "Restore Version"}
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Dialog
         open={Boolean(postToDelete)}
         onClose={() => !deleting && setPostToDelete(null)}
@@ -795,23 +1219,17 @@ function PostsPage() {
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button
-            onClick={() => {
-              setCreateDialogOpen(false);
-              setEditingPost(null);
-              setNewPost(emptyPostForm);
-            }}
-            disabled={savingPost}
-          >
+          <Button onClick={() => setPostToDelete(null)} disabled={deleting}>
             Cancel
           </Button>
 
-          <Button type="submit" variant="contained" disabled={savingPost}>
-            {savingPost
-              ? "Saving..."
-              : editingPost
-                ? "Save Changes"
-                : "Create Post"}
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handleDelete}
+            disabled={deleting}
+          >
+            {deleting ? "Deleting..." : "Delete Post"}
           </Button>
         </DialogActions>
       </Dialog>

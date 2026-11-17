@@ -31,3 +31,26 @@ export const deletePost = async (postId) => {
 
   return response.data;
 };
+
+// Get all revisions for a specific post
+export const getPostRevisions = async (postId) => {
+  const response = await api.get(`/posts/${postId}/revisions`);
+
+  return response.data.data || [];
+};
+
+// Get the details of a specific revision
+export const getPostRevision = async (postId, revisionId) => {
+  const response = await api.get(`/posts/${postId}/revisions/${revisionId}`);
+
+  return response.data.data;
+};
+
+// Restore a post to a selected revision
+export const restorePostRevision = async (postId, revisionId) => {
+  const response = await api.post(
+    `/posts/${postId}/revisions/${revisionId}/restore`,
+  );
+
+  return response.data;
+};
