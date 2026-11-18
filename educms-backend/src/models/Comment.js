@@ -75,6 +75,68 @@ const findByPostId = async ({
   return result.rows;
 };
 
+// Find comments grouped into threads for the post reader.
+const findThreadsByPostId = async ({
+  postId,
+  status = "approved",
+  page = 1,
+  limit = 10,
+}) => {
+  const offset = (page - 1) * limit;
+
+  const sql = `
+    WITH RECURSIVE root_comments AS (
+      SELECT c.id, c.created_at
+      FROM comments c
+      WHERE c.post_id = $1
+        AND c.status = $2
+        AND (
+          c.parent_id IS NULL
+          OR NOT EXISTS (
+            SELECT 1
+            FROM comments parent
+            WHERE parent.id = c.parent_id
+              AND parent.status = $2
+          )
+        )
+      ORDER BY c.created_at ASC, c.id ASC
+      LIMIT $3
+      OFFSET $4
+    ),
+    comment_threads AS (
+      SELECT
+        c.*,
+        0 AS depth,
+        ARRAY[c.id] AS path
+      FROM comments c
+      INNER JOIN root_comments root ON root.id = c.id
+
+      UNION ALL
+
+      SELECT
+        child.*,
+        parent.depth + 1 AS depth,
+        parent.path || child.id AS path
+      FROM comments child
+      INNER JOIN comment_threads parent
+        ON child.parent_id = parent.id
+      WHERE child.status = $2
+    )
+    SELECT
+      thread.*,
+      u.username,
+      u.first_name,
+      u.last_name
+    FROM comment_threads thread
+    LEFT JOIN users u ON u.id = thread.user_id
+    ORDER BY thread.path ASC
+  `;
+
+  const result = await query(sql, [postId, status, limit, offset]);
+
+  return result.rows;
+};
+
 // Update a comment
 const update = async (id, { content, status } = {}) => {
   const sql = `
@@ -118,6 +180,29 @@ const countByPostId = async (postId, status) => {
   return result.rows[0].total;
 };
 
+// Count top-level comment threads for reader pagination.
+const countThreadsByPostId = async (postId, status = "approved") => {
+  const sql = `
+    SELECT COUNT(*)::INTEGER AS total
+    FROM comments c
+    WHERE c.post_id = $1
+      AND c.status = $2
+      AND (
+        c.parent_id IS NULL
+        OR NOT EXISTS (
+          SELECT 1
+          FROM comments parent
+          WHERE parent.id = c.parent_id
+            AND parent.status = $2
+        )
+      )
+  `;
+
+  const result = await query(sql, [postId, status]);
+
+  return result.rows[0].total;
+};
+
 // Export model functions
 module.exports = {
   create,
@@ -126,4 +211,6 @@ module.exports = {
   update,
   remove,
   countByPostId,
+  countThreadsByPostId,
+  findThreadsByPostId,
 };

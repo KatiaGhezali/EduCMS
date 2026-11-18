@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -90,6 +91,7 @@ function getStatusColor(status) {
 }
 
 function PostsPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   const isSubscriber = user?.role === "subscriber";
@@ -605,32 +607,22 @@ function PostsPage() {
               <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Created</TableCell>
 
-              {canDelete && (
-                <TableCell align="right" sx={{ fontWeight: 600 }}>
-                  Actions
-                </TableCell>
-              )}
+              <TableCell align="right" sx={{ fontWeight: 600 }}>
+                Actions
+              </TableCell>
             </TableRow>
           </TableHead>
 
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell
-                  colSpan={canDelete ? 6 : 5}
-                  align="center"
-                  sx={{ py: 6 }}
-                >
+                <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                   <CircularProgress size={28} />
                 </TableCell>
               </TableRow>
             ) : posts.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={canDelete ? 6 : 5}
-                  align="center"
-                  sx={{ py: 6 }}
-                >
+                <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                   <Typography color="text.secondary">
                     No posts found.
                   </Typography>
@@ -674,41 +666,54 @@ function PostsPage() {
 
                   <TableCell>{formatDate(post.created_at)}</TableCell>
 
-                  {canDelete && (
-                    <TableCell align="right">
-                      {canViewRevisions && (
-                        <Button
-                          color="secondary"
-                          size="small"
-                          startIcon={<HistoryOutlinedIcon />}
-                          onClick={() => handleOpenHistory(post)}
-                          sx={{ mr: 1 }}
-                        >
-                          History
-                        </Button>
-                      )}
-                      {canEditPost(post) && (
-                        <Button
-                          color="primary"
-                          size="small"
-                          startIcon={<EditOutlinedIcon />}
-                          onClick={() => handleEditPost(post)}
-                          sx={{ mr: 1 }}
-                        >
-                          Edit
-                        </Button>
-                      )}
+                  <TableCell align="right">
+                    <Button
+                      color="primary"
+                      size="small"
+                      startIcon={<VisibilityOutlinedIcon />}
+                      onClick={() => navigate(`/dashboard/posts/${post.id}`)}
+                      sx={{ mr: 1 }}
+                    >
+                      View
+                    </Button>
 
-                      <Button
-                        color="error"
-                        size="small"
-                        startIcon={<DeleteOutlineOutlinedIcon />}
-                        onClick={() => setPostToDelete(post)}
-                      >
-                        Delete
-                      </Button>
-                    </TableCell>
-                  )}
+                    {canDelete && (
+                      <>
+                        {canViewRevisions && (
+                          <Button
+                            color="secondary"
+                            size="small"
+                            startIcon={<HistoryOutlinedIcon />}
+                            onClick={() => handleOpenHistory(post)}
+                            sx={{ mr: 1 }}
+                          >
+                            History
+                          </Button>
+                        )}
+
+                        {canEditPost(post) && (
+                          <Button
+                            color="primary"
+                            size="small"
+                            startIcon={<EditOutlinedIcon />}
+                            onClick={() => handleEditPost(post)}
+                            sx={{ mr: 1 }}
+                          >
+                            Edit
+                          </Button>
+                        )}
+
+                        <Button
+                          color="error"
+                          size="small"
+                          startIcon={<DeleteOutlineOutlinedIcon />}
+                          onClick={() => setPostToDelete(post)}
+                        >
+                          Delete
+                        </Button>
+                      </>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))
             )}

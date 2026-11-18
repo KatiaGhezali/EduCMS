@@ -8,6 +8,7 @@ export const getCommentsByPost = async (postId, params = {}) => {
 
   return {
     comments: response.data.data || [],
+    totalComments: response.data.totalComments || 0,
     pagination: response.data.pagination || {
       page: 1,
       limit: 10,
@@ -15,6 +16,13 @@ export const getCommentsByPost = async (postId, params = {}) => {
       totalPages: 0,
     },
   };
+};
+
+// Create a comment or reply on a post
+export const createComment = async (postId, commentData) => {
+  const response = await api.post(`/posts/${postId}/comments`, commentData);
+
+  return response.data;
 };
 
 // Update a comment's content or moderation status

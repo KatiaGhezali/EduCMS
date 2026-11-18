@@ -14,6 +14,11 @@ export const getPosts = async (params = {}) => {
   };
 };
 
+export const getPostById = async (postId) => {
+  const response = await api.get(`/posts/${postId}`);
+  return response.data.data;
+};
+
 export const createPost = async (postData) => {
   const response = await api.post("/posts", postData);
 

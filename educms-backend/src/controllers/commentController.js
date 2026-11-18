@@ -11,6 +11,39 @@ const getPagination = (query) => {
   return { page, limit };
 };
 
+// Convert a flat list of comments into nested discussion threads.
+const buildCommentThreads = (comments) => {
+  const commentMap = new Map();
+  const roots = [];
+
+  // Prepare each comment and its replies array.
+  comments.forEach((comment) => {
+    commentMap.set(String(comment.id), {
+      ...comment,
+      replies: [],
+    });
+  });
+
+  // Attach each reply to its parent.
+  comments.forEach((comment) => {
+    const currentComment = commentMap.get(String(comment.id));
+
+    if (comment.parent_id !== null) {
+      const parent = commentMap.get(String(comment.parent_id));
+
+      if (parent) {
+        parent.replies.push(currentComment);
+      } else {
+        roots.push(currentComment);
+      }
+    } else {
+      roots.push(currentComment);
+    }
+  });
+
+  return roots;
+};
+
 // Handle database constraint errors.
 const handleDatabaseError = (error, res, next) => {
   if (error.code === "23503") {
@@ -57,24 +90,26 @@ const getCommentsByPost = async (req, res, next) => {
 
     const { page, limit } = getPagination(req.query);
 
-    const [comments, total] = await Promise.all([
-      Comment.findByPostId({
+    const [comments, totalThreads, totalComments] = await Promise.all([
+      Comment.findThreadsByPostId({
         postId: req.params.postId,
         status: requestedStatus,
         page,
         limit,
       }),
+      Comment.countThreadsByPostId(req.params.postId, requestedStatus),
       Comment.countByPostId(req.params.postId, requestedStatus),
     ]);
 
     return res.status(200).json({
       success: true,
-      data: comments,
+      data: buildCommentThreads(comments),
+      totalComments,
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        total: totalThreads,
+        totalPages: Math.ceil(totalThreads / limit),
       },
     });
   } catch (error) {

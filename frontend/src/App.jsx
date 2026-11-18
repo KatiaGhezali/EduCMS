@@ -11,6 +11,7 @@ import CategoriesPage from "./pages/dashboard/CategoriesPage.jsx";
 import TagsPage from "./pages/dashboard/TagsPage.jsx";
 import CommentsPage from "./pages/dashboard/CommentsPage.jsx";
 import MediaPage from "./pages/dashboard/MediaPage.jsx";
+import PostDetailsPage from "./pages/dashboard/PostDetailsPage.jsx";
 
 import { useAuth } from "./context/AuthContext";
 
@@ -112,6 +113,7 @@ function App() {
         <Route element={<DashboardShell />}>
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/dashboard/posts" element={<PostsPage />} />
+          <Route path="/dashboard/posts/:id" element={<PostDetailsPage />} />
           <Route path="/dashboard/categories" element={<CategoriesPage />} />
           <Route path="/dashboard/tags" element={<TagsPage />} />
           <Route path="/dashboard/comments" element={<CommentsPage />} />
